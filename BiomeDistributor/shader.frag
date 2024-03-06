@@ -179,8 +179,31 @@ const vec4 ICE_SPIKES = vec4(0.8196078431372549, 0.8901960784313725, 0.937254901
 const vec4 FROZEN_ARCHIPELAGO = vec4(0.792156862745098, 1.0, 0.8823529411764706, 1.0);
 const vec4 TRAVERTINE_TERRACES = vec4(0.4627450980392157, 0.8666666666666667, 1.0, 1.0);
 
+const double MOUNTAIN_MIN = -262.535;
+const double MOUNTAIN_MAX =  3060.64;
+
+const double LAND_MIN = -594.628;
+const double LAND_MAX =  2133.08;
+
+const double RIVER_MIN = -61.0451;
+const double RIVER_MAX =  2712.58;
+
+const vec4 kDESERT   = vec4(216.0/255.0, 188.0/255.0,  82.0/255.0, 1.0);
+const vec4 kSAVANNAH = vec4(185.0/255.0, 199.0/255.0,  95.0/255.0, 1.0);
+const vec4 kMESA     = vec4(200.0/255.0,  90.0/255.0,  53.0/255.0, 1.0);
+const vec4 kFOREST   = vec4( 50.0/255.0, 106.0/255.0,  32.0/255.0, 1.0);
+const vec4 kPLAINS   = vec4(100.0/255.0, 201.0/255.0, 108.0/255.0, 1.0);
+const vec4 kSWAMP    = vec4( 30.0/255.0, 107.0/255.0,  76.0/255.0, 1.0);
+const vec4 kXERIC    = vec4( 49.0/255.0, 143.0/255.0,   0.0/255.0, 1.0);
+const vec4 kJUNGLE   = vec4( 22.0/255.0, 180.0/255.0,   2.0/255.0, 1.0);
+const vec4 kAUTUMN   = vec4(255.0/255.0, 149.0/255.0,  43.0/255.0, 1.0);
+const vec4 kTAIGA    = vec4( 27.0/255.0, 199.0/255.0, 167.0/255.0, 1.0);
+const vec4 kSNOW     = vec4(156.0/255.0, 242.0/255.0, 254.0/255.0, 1.0);
+
 uniform sampler2D landSampler;
 uniform sampler2D mountainSampler;
+uniform sampler2D riverSampler;
+uniform sampler2D biomeSampler;
 in vec2 vTexCoord;
 out vec4 fragColor;
 
@@ -199,17 +222,77 @@ double exteriorDist(vec4 sdf)
 	return sdf.g;
 }
 
+bool closeEnough(vec4 lhs, vec4 rhs)
+{
+	return (abs(lhs.r - rhs.r) < 0.005) &&
+	(abs(lhs.g - rhs.g) < 0.005) &&
+	(abs(lhs.b - rhs.b) < 0.005) &&
+	(abs(lhs.a - rhs.a) < 0.005);
+}
+
 void main()
 {
 	vec4 landSDF = texture(landSampler, vTexCoord);
 	vec4 mountainSDF = texture(mountainSampler, vTexCoord);
+	vec4 riverSDF = texture(riverSampler, vTexCoord);
+	vec4 biomeColor = texture(biomeSampler, vTexCoord);
 
 	if (inside(landSDF)) {
 		if (inside(mountainSDF)) {
-			fragColor = MOUNTAINS;
+			if (closeEnough(biomeColor, kDESERT)) {
+				fragColor = XERIC_MOUNTAINS;
+			} else if (closeEnough(biomeColor, kSAVANNAH)) {
+				fragColor = XERIC_MOUNTAINS;
+			} else if (closeEnough(biomeColor, kMESA)) {
+				fragColor = XERIC_MOUNTAINS;
+			} else if (closeEnough(biomeColor, kFOREST)) {
+				fragColor = MOUNTAINS;
+			} else if (closeEnough(biomeColor, kPLAINS)) {
+				fragColor = MOUNTAINS;
+			} else if (closeEnough(biomeColor, kSWAMP)) {
+				fragColor = TEMPERATE_MOUNTAINS;
+			} else if (closeEnough(biomeColor, kXERIC)) {
+				fragColor = TEMPERATE_MOUNTAINS;
+			} else if (closeEnough(biomeColor, kJUNGLE)) {
+				fragColor = TEMPERATE_MOUNTAINS;
+			} else if (closeEnough(biomeColor, kAUTUMN)) {
+				fragColor = AUTUMNAL_FOREST;
+			} else if (closeEnough(biomeColor, kTAIGA)) {
+				fragColor = SNOWY_MOUNTAINS;
+			} else if (closeEnough(biomeColor, kSNOW)) {
+				fragColor = SNOWY_MOUNTAINS;
+			} else {
+				fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+			}
 		} else {
-			fragColor = PLAINS;
+			if (closeEnough(biomeColor, kDESERT)) {
+				fragColor = DESERT;
+			} else if (closeEnough(biomeColor, kSAVANNAH)) {
+				fragColor = SAVANNA;
+			} else if (closeEnough(biomeColor, kMESA)) {
+				fragColor = BADLANDS;
+			} else if (closeEnough(biomeColor, kFOREST)) {
+				fragColor = BROADLEAF_FOREST;
+			} else if (closeEnough(biomeColor, kPLAINS)) {
+				fragColor = PLAINS;
+			} else if (closeEnough(biomeColor, kSWAMP)) {
+				fragColor = SWAMP;
+			} else if (closeEnough(biomeColor, kXERIC)) {
+				fragColor = XERIC_SHRUBLAND;
+			} else if (closeEnough(biomeColor, kJUNGLE)) {
+				fragColor = JUNGLE;
+			} else if (closeEnough(biomeColor, kAUTUMN)) {
+				fragColor = AUTUMNAL_FOREST;
+			} else if (closeEnough(biomeColor, kTAIGA)) {
+				fragColor = TAIGA;
+			} else if (closeEnough(biomeColor, kSNOW)) {
+				fragColor = SNOWY_PLAINS;
+			} else {
+				fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+			}
 		}
+	} else if (inside(riverSDF)) {
+		fragColor = RIVER;
 	} else {
 		if (exteriorDist(landSDF) > 0.4) {
 			fragColor = DEEP_OCEAN;

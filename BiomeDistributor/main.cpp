@@ -23,6 +23,8 @@ QString readFile(const char *file)
 void processImage(
 	const QImage& land,
 	const QImage& mountain,
+	const QImage& river,
+	const QImage& biome,
 	QImage& out
 )
 {
@@ -92,6 +94,26 @@ void processImage(
 		return;
 	}
 
+	QOpenGLTexture riverTexture(QOpenGLTexture::Target2D);
+	riverTexture.setData(river);
+
+	riverTexture.bind(2);
+	if(!riverTexture.isBound())
+	{
+		qWarning() << "River texture not bound.";
+		return;
+	}
+
+	QOpenGLTexture biomeTexture(QOpenGLTexture::Target2D);
+	biomeTexture.setData(biome);
+
+	biomeTexture.bind(3);
+	if(!biomeTexture.isBound())
+	{
+		qWarning() << "Biome texture not bound.";
+		return;
+	}
+
 	struct VertexData
 	{
 		QVector2D position;
@@ -148,6 +170,8 @@ void processImage(
 	program.setAttributeBuffer("aTexCoord", GL_FLOAT, offset, 2, sizeof(VertexData));
 	program.setUniformValue("landSampler", 0);
 	program.setUniformValue("mountainSampler", 1);
+	program.setUniformValue("riverSampler", 2);
+	program.setUniformValue("biomeSampler", 3);
 
 	qWarning() << "Rendering biomes...";
 	context.functions()->glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, Q_NULLPTR);
@@ -162,8 +186,10 @@ int main(int argc, char* argv[])
 	qWarning() << "Loading SDFs...";
 	QImage landSDF("Data/area.png", "PNG");
 	QImage mountainSDF("Data/mountain.png", "PNG");
+	QImage riverSDF("Data/river.png", "PNG");
+	QImage biomeSDF("Data/biome.png", "PNG");
 	QImage out;
-	processImage(landSDF, mountainSDF, out);
+	processImage(landSDF, mountainSDF, riverSDF, biomeSDF, out);
 	out.save("Out.png", "PNG");
 	return 0;
 }
